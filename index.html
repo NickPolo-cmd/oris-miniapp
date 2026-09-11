@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ORIS · Управление</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* Палитра снята с аватарки бота: тёмный шёлк, янтарь, коралл, сталь. */
+:root{
+  --ink:#08070D; --ink2:#100D18; --ink3:#171325;
+  --amber:#FFB020; --coral:#FF6B4A; --crimson:#C0304F; --teal:#2E8BA8; --steel:#1B3A4B;
+  --text:#F3EFF7; --muted:#948CA6; --line:rgba(255,255,255,.09);
+  --flame:linear-gradient(135deg,#FFB020 0%,#FF6B4A 48%,#C0304F 100%);
+  --cool:linear-gradient(135deg,#3FA7C4 0%,#2E8BA8 55%,#1B3A4B 100%);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0;padding:0 14px 120px;color:var(--text);background:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  overflow-x:hidden;
+}
+/* шёлковые полотна на фоне — то же движение, что на аватарке */
+.silk{position:fixed;inset:-30% -20%;z-index:-1;filter:blur(60px);opacity:.85;pointer-events:none}
+.silk i{position:absolute;display:block;border-radius:50%;mix-blend-mode:screen;animation:drift 26s ease-in-out infinite}
+.s1{width:70vw;height:52vw;left:-8vw;top:4vh;background:radial-gradient(circle at 40% 40%,#2E8BA8 0%,rgba(46,139,168,0) 68%)}
+.s2{width:78vw;height:58vw;right:-14vw;top:-4vh;background:radial-gradient(circle at 55% 45%,#C0304F 0%,rgba(192,48,79,0) 66%);animation-delay:-7s}
+.s3{width:62vw;height:44vw;left:6vw;bottom:2vh;background:radial-gradient(circle at 50% 50%,#FFB020 0%,rgba(255,176,32,0) 62%);animation-delay:-13s}
+.s4{width:66vw;height:48vw;right:-6vw;bottom:-6vh;background:radial-gradient(circle at 45% 55%,#FF6B4A 0%,rgba(255,107,74,0) 64%);animation-delay:-19s}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0) scale(1)}33%{transform:translate3d(4vw,-3vh,0) scale(1.12)}66%{transform:translate3d(-3vw,4vh,0) scale(.94)}}
+@media (prefers-reduced-motion:reduce){.silk i{animation:none}}
+
+/* --------------------------------- шапка --------------------------------- */
+header{padding:18px 0 12px;display:flex;align-items:center;gap:13px}
+.orb{width:46px;height:46px;flex:0 0 auto;border-radius:15px;position:relative;overflow:hidden;
+  background:radial-gradient(120% 120% at 25% 20%,#2E8BA8 0%,#171325 42%),
+             radial-gradient(90% 90% at 78% 72%,#FF6B4A 0%,rgba(255,107,74,0) 58%),
+             radial-gradient(70% 70% at 60% 30%,#FFB020 0%,rgba(255,176,32,0) 52%);
+  box-shadow:0 6px 22px rgba(255,107,74,.28), inset 0 0 0 1px rgba(255,255,255,.12)}
+h1{font-size:20px;line-height:1.15;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:12.5px;margin-top:3px}
+
+/* --------------------------------- вкладки -------------------------------- */
+.tabs{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -14px 14px;padding:2px 14px 12px;
+  position:sticky;top:0;z-index:5;background:linear-gradient(var(--ink) 68%,rgba(8,7,13,0))}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:8px 15px;
+  background:rgba(255,255,255,.04);color:var(--muted);font:600 13.5px/1 inherit;transition:.18s}
+.tabs button[aria-selected=true]{background:var(--flame);color:#1a0d08;border-color:transparent;
+  box-shadow:0 4px 16px rgba(255,107,74,.3)}
+
+section{display:none;animation:in .22s ease}
+section.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* --------------------------------- карточки ------------------------------- */
+.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025));
+  border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin-bottom:11px;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.card h2{font-size:14.5px;margin:0 0 3px;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:12.5px}
+.card p+*{margin-top:11px}
+
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row:first-child{padding-top:2px}
+.row:last-child{border-bottom:0;padding-bottom:2px}
+.nm{font-size:14.5px}
+.nt{color:var(--muted);font-size:12px;margin-top:2px}
+
+/* -------------------------------- выбор ----------------------------------- */
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{border:1px solid var(--line);border-radius:13px;padding:10px 13px;text-align:left;
+  background:rgba(255,255,255,.03);color:var(--text);font:500 13.5px/1.3 inherit;transition:.16s}
+.pick button small{display:block;color:var(--muted);font-size:11px;margin-top:3px;font-weight:400}
+.pick button[aria-pressed=true]{border-color:transparent;background:var(--flame);color:#1a0d08;
+  box-shadow:0 5px 18px rgba(255,107,74,.26)}
+.pick button[aria-pressed=true] small{color:rgba(26,13,8,.72)}
+.pick.cool button[aria-pressed=true]{background:var(--cool);color:#eaf6fb}
+.pick.cool button[aria-pressed=true] small{color:rgba(234,246,251,.75)}
+.pick.wide button{flex:1 1 100%}
+
+/* ------------------------------ переключатель ----------------------------- */
+.sw{position:relative;width:50px;height:29px;flex:0 0 auto;border:0;border-radius:999px;
+  background:rgba(255,255,255,.13);transition:.2s}
+.sw[aria-pressed=true]{background:var(--flame);box-shadow:0 3px 14px rgba(255,107,74,.34)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;
+  background:#fff;transition:transform .19s cubic-bezier(.3,1.4,.5,1)}
+.sw[aria-pressed=true]::after{transform:translateX(21px)}
+
+/* --------------------------------- поля ----------------------------------- */
+textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:13px;padding:12px 13px;
+  font:inherit;background:rgba(0,0,0,.28);color:var(--text);resize:vertical}
+textarea::placeholder,input::placeholder{color:#6d6680}
+textarea:focus,input:focus{outline:none;border-color:var(--coral);box-shadow:0 0 0 3px rgba(255,107,74,.14)}
+
+.act{display:block;width:100%;margin-top:9px;border:0;border-radius:13px;padding:13px;
+  background:var(--flame);color:#1a0d08;font:700 14.5px/1 inherit;box-shadow:0 5px 18px rgba(255,107,74,.26)}
+.act.ghost{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:600}
+.act.cool{background:var(--cool);color:#eaf6fb;box-shadow:0 5px 18px rgba(46,139,168,.24)}
+
+/* -------------------------------- мелочи ---------------------------------- */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.chip.on{background:rgba(46,139,168,.18);border-color:rgba(63,167,196,.4);color:#8fd4ea}
+.dot{width:7px;height:7px;border-radius:50%;background:#4b4459}
+.dot.y{background:#3FD07A;box-shadow:0 0 8px rgba(63,208,122,.7)}
+.stat{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+.stat div{flex:1 1 0;min-width:88px;background:rgba(0,0,0,.26);border:1px solid var(--line);
+  border-radius:13px;padding:11px 12px}
+.stat b{display:block;font-size:19px;letter-spacing:-.02em}
+.stat span{color:var(--muted);font-size:11.5px}
+.time{display:flex;gap:9px;align-items:center}
+.time input{width:64px;text-align:center;font-weight:600;font-size:17px}
+.warn{border-left:2px solid var(--amber);padding-left:12px}
+code{background:rgba(0,0,0,.4);border:1px solid var(--line);padding:2px 6px;border-radius:7px;font-size:12px}
+.empty{color:var(--muted);font-size:12.5px;margin:0}
+</style>
+</head>
+<body>
+<div class="silk"><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i></div>
+
+<header>
+  <div class="orb"></div>
+  <div>
+    <h1 id="ttl">ORIS AI</h1>
+    <div class="sub" id="sub">управление ботом</div>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button role="tab" data-tab="t-main" aria-selected="true">Главное</button>
+  <button role="tab" data-tab="t-voice" aria-selected="false">Голос</button>
+  <button role="tab" data-tab="t-news" aria-selected="false">Новости</button>
+  <button role="tab" data-tab="t-dig" aria-selected="false">Поиск</button>
+  <button role="tab" data-tab="t-sites" aria-selected="false">Сайты</button>
+  <button role="tab" data-tab="t-bots" aria-selected="false">Боты</button>
+  <button role="tab" data-tab="t-mem" aria-selected="false">Память</button>
+  <button role="tab" data-tab="t-keys" aria-selected="false">Ключи</button>
+  <button role="tab" data-tab="t-dev" aria-selected="false">Доработка</button>
+</div>
+
+<section id="t-main" class="on">
+  <div class="card">
+    <h2>Кто отвечает</h2>
+    <p>Ассистент задаёт роль и рабочую папку.</p>
+    <div class="pick wide" id="pAssist"></div>
+  </div>
+  <div class="card">
+    <h2>Чем думает</h2>
+    <p>🌍 отвечает без включённого Мака · 💻 нужен включённый.</p>
+    <div class="pick wide cool" id="pBrain"></div>
+  </div>
+  <div class="card">
+    <div class="row">
+      <div><div class="nm">Режим ИИ</div><div class="nt">Выключен — бот отвечает сам, без ключей</div></div>
+      <button class="sw" id="swAi"></button>
+    </div>
+    <div class="row">
+      <div><div class="nm">Отвечать голосом</div><div class="nt" id="vnName">озвучка ответов</div></div>
+      <button class="sw" id="swVoice"></button>
+    </div>
+  </div>
+</section>
+
+<section id="t-voice">
+  <div class="card">
+    <h2>Где распознавать речь</h2>
+    <p>На Маке — бесплатно и приватно. В облаке — работает, когда Мак выключен.</p>
+    <div class="pick wide cool" id="pWhere">
+      <button data-v="auto">🤖 Пусть решает сам<small>Мак включён — здесь, иначе облако</small></button>
+      <button data-v="local">💻 Только этот Мак<small>звук никуда не уходит</small></button>
+      <button data-v="cloud">🌍 Сначала облако<small>быстрее, нужен ключ</small></button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Модель распознавания</h2>
+    <div class="pick" id="pModel">
+      <button data-v="turbo">large-v3-turbo<small>тот же текст, вдвое быстрее</small></button>
+      <button data-v="large">large-v3<small>эталон, дольше</small></button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Сказать голосом</h2>
+    <p>Закрою приложение и буду ждать голосовое — просто скажи, что поменять.</p>
+    <button class="act ghost" data-send='{"do":"voice","what":"settings"}'>🎤 Записать голосовое</button>
+  </div>
+</section>
+
+<section id="t-news">
+  <div class="card">
+    <div class="row">
+      <div><div class="nm">Топ-5 новостей про ИИ</div><div class="nt" id="msk">каждый день</div></div>
+      <button class="sw" id="swNews"></button>
+    </div>
+    <div class="time" style="margin-top:12px">
+      <span style="font-size:13.5px">Присылать в</span>
+      <input type="text" id="nh" inputmode="numeric" maxlength="2" value="09">
+      <span>:</span>
+      <input type="text" id="nm" inputmode="numeric" maxlength="2" value="00">
+      <span style="color:var(--muted);font-size:12.5px">МСК</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Проверить сейчас</h2>
+    <p>Соберу свежую пятёрку из девяти лент и пришлю в чат.</p>
+    <button class="act" data-send='{"do":"digest"}'>📰 Прислать новости</button>
+  </div>
+</section>
+
+<section id="t-dig">
+  <div class="card">
+    <h2>Глубокий поиск</h2>
+    <p>Девять слоёв: веб-архив с удалёнными страницами, научные базы, Хабр,
+       Hacker News, GitHub, Википедия и обычная выдача.</p>
+    <input type="text" id="digQ" placeholder="что искать — или адрес сайта для архива">
+    <button class="act" id="digGo">🕵️ Копать</button>
+    <button class="act ghost" data-send='{"do":"voice","what":"search"}'>🎤 Наговорю запрос</button>
+  </div>
+</section>
+
+<section id="t-sites">
+  <div class="card">
+    <h2>Мои сайты как шаблоны</h2>
+    <p>Выбери — пришлю карточку: можно собрать свой или вытащить отдельный блок.</p>
+    <div class="pick wide" id="pTpl"></div>
+  </div>
+</section>
+
+<section id="t-bots">
+  <div class="card">
+    <h2>Конструктор ботов</h2>
+    <p id="draftNote">Наговори голосовыми, каким должен быть бот — соберу промпт и рабочую папку.</p>
+    <button class="act" data-send='{"do":"botnew"}'>🎤 Наговорить нового бота</button>
+    <button class="act ghost" id="botBuild" style="display:none" data-send='{"do":"botbuild"}'>✅ Собрать из черновика</button>
+  </div>
+  <div class="card" id="botsCard">
+    <h2>Уже собраны</h2>
+    <div class="pick wide" id="pBots"></div>
+  </div>
+</section>
+
+<section id="t-mem">
+  <div class="card">
+    <h2>Общая память</h2>
+    <p>Один журнал на все модели: Claude видит, что отвечал Codex, и наоборот.</p>
+    <div class="stat">
+      <div><b id="memT">0</b><span>обменов</span></div>
+      <div><b id="memF">0</b><span>правил</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Правила навсегда</h2>
+    <p>Скажи «запомни: …» в чате — правило попадёт сюда и будет в каждом разговоре.</p>
+    <input type="text" id="factText" placeholder="новое правило">
+    <button class="act" id="factGo">📌 Запомнить</button>
+    <button class="act ghost" data-send='{"do":"facts"}'>📋 Показать все</button>
+  </div>
+  <div class="card warn">
+    <h2>Очистить переписку</h2>
+    <p>Правила останутся, история разговоров сотрётся.</p>
+    <button class="act ghost" data-send='{"do":"forget"}'>🧹 Забыть переписку</button>
+  </div>
+</section>
+
+<section id="t-keys">
+  <div class="card warn">
+    <h2>Ключи сюда не вводятся</h2>
+    <p>Нарочно: всё, отправленное из приложения, идёт через переписку. Ключи вписываются
+       в Терминале одной строкой и остаются только на диске, с правами 600.</p>
+  </div>
+  <div class="card" id="keyList"></div>
+  <div class="card">
+    <h2>Добавить ключ</h2>
+    <p>Нажми — пришлю в чат готовую команду и адрес, где ключ взять.</p>
+    <div class="pick" id="keyAsk"></div>
+  </div>
+</section>
+
+<section id="t-dev">
+  <div class="card">
+    <h2>Доработать самого бота</h2>
+    <p>Опиши, что поменять. Claude откроет исходники бота, внесёт правку и пришлёт отчёт.
+       Перед изменениями делается копия.</p>
+    <textarea id="devText" rows="5" placeholder="Например: добавь в режим Автомат кнопку «Погода» и бери данные с Open-Meteo"></textarea>
+    <button class="act" id="devGo">🛠 Отправить в работу</button>
+    <button class="act ghost" data-send='{"do":"voice","what":"dev"}'>🎤 Лучше наговорю</button>
+  </div>
+  <div class="card">
+    <h2>Служебное</h2>
+    <button class="act ghost" data-send='{"do":"status"}'>📊 Состояние бота</button>
+    <button class="act ghost" data-send='{"do":"backup"}'>💾 Копия исходников</button>
+    <button class="act ghost" data-send='{"do":"restart"}'>🔄 Перезапустить</button>
+  </div>
+</section>
+
+<script>
+(function(){
+var tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#08070D');tg.setBackgroundColor('#08070D');}catch(e){}}
+
+var S={},changes={};
+
+/* Состояние приходит в адресе. Префикс: z — сжато gzip, j — как есть. */
+function b64(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
+  var bin=atob(s),a=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return a;}
+
+function start(){
+  var raw=new URLSearchParams(location.search).get('s');
+  if(!raw){render();return;}
+  var kind=raw[0],body=raw.slice(1);
+  try{
+    var bytes=b64(body);
+    if(kind==='z'&&typeof DecompressionStream!=='undefined'){
+      var ds=new DecompressionStream('gzip');
+      new Response(new Blob([bytes]).stream().pipeThrough(ds)).text()
+        .then(function(t){try{S=JSON.parse(t);}catch(e){}render();})
+        .catch(function(){render();});
+      return;
+    }
+    S=JSON.parse(new TextDecoder().decode(bytes));
+  }catch(e){}
+  render();
+}
+
+function hap(k){try{tg.HapticFeedback.impactOccurred(k||'light');}catch(e){}}
+function send(p){if(!tg){alert('Открой это из бота');return;}tg.sendData(JSON.stringify(p));tg.close();}
+
+document.querySelectorAll('[role=tab]').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('[role=tab]').forEach(function(x){x.setAttribute('aria-selected','false');});
+    b.setAttribute('aria-selected','true');
+    document.querySelectorAll('section').forEach(function(s){s.classList.remove('on');});
+    document.getElementById(b.dataset.tab).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});hap();
+  });
+});
+
+function picker(box,items,cur,cb){
+  box.innerHTML='';
+  (items||[]).forEach(function(it){
+    var b=document.createElement('button');
+    b.innerHTML=it.n+(it.d?'<small>'+it.d+'</small>':'');
+    b.setAttribute('aria-pressed',String(it.i===cur));
+    b.addEventListener('click',function(){
+      box.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');hap();cb(it.i);
+    });
+    box.appendChild(b);
+  });
+}
+function toggler(el,on,cb){
+  el.setAttribute('aria-pressed',String(!!on));
+  el.addEventListener('click',function(){
+    var n=el.getAttribute('aria-pressed')!=='true';
+    el.setAttribute('aria-pressed',String(n));hap('medium');cb(n);
+  });
+}
+function segment(box,cur,cb){
+  box.querySelectorAll('button').forEach(function(b){
+    b.setAttribute('aria-pressed',String(b.dataset.v===cur));
+    b.addEventListener('click',function(){
+      box.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');hap();cb(b.dataset.v);
+    });
+  });
+}
+
+function render(){
+  document.getElementById('ttl').textContent=S.N||'ORIS AI';
+  document.getElementById('sub').textContent=(S.m==='ai'?'режим ИИ включён':'автомат · без ключей')
+    +(S.M?' · Москва '+S.M:'');
+
+  picker(document.getElementById('pAssist'),S.A,S.a,function(v){changes.assistantId=v;});
+  picker(document.getElementById('pBrain'),(S.B||[]).map(function(b){
+    return {i:b.i,n:b.n+' '+(b.c?'🌍':'💻'),d:b.d};}),S.b,function(v){changes.brainId=v;});
+
+  toggler(document.getElementById('swAi'),S.m==='ai',function(v){changes.mode=v?'ai':'auto';});
+  toggler(document.getElementById('swVoice'),S.v,function(v){changes.voiceReply=v;});
+  toggler(document.getElementById('swNews'),S.dg,function(v){changes.digestOn=v;});
+  document.getElementById('vnName').textContent='голос: '+(S.vn||'Milena');
+
+  segment(document.getElementById('pWhere'),S.sw||'auto',function(v){changes.sttWhere=v;});
+  segment(document.getElementById('pModel'),S.sm||'turbo',function(v){changes.sttModel=v;});
+
+  document.getElementById('nh').value=String(S.dh==null?9:S.dh).padStart(2,'0');
+  document.getElementById('nm').value=String(S.dm==null?0:S.dm).padStart(2,'0');
+  document.getElementById('msk').textContent='сейчас в Москве '+(S.M||'—');
+  ['nh','nm'].forEach(function(id){
+    document.getElementById(id).addEventListener('input',function(){
+      changes.digestHour=Number(document.getElementById('nh').value)||0;
+      changes.digestMinute=Number(document.getElementById('nm').value)||0;
+    });
+  });
+
+  var tb=document.getElementById('pTpl');
+  if((S.T||[]).length){
+    S.T.forEach(function(t){
+      var b=document.createElement('button');
+      b.innerHTML='🌐 '+t.n+'<small>'+t.p+' стр · '+t.b+' блоков</small>';
+      b.addEventListener('click',function(){hap();send({do:'tpl',slug:t.s});});
+      tb.appendChild(b);
+    });
+  } else tb.innerHTML='<p class="empty">Шаблоны ещё не собраны.</p>';
+
+  var ob=document.getElementById('pBots');
+  if((S.O||[]).length){
+    S.O.forEach(function(o){
+      var b=document.createElement('button');
+      b.innerHTML='🤖 '+o.n;
+      b.addEventListener('click',function(){hap();send({do:'bot',slug:o.s});});
+      ob.appendChild(b);
+    });
+  } else document.getElementById('botsCard').style.display='none';
+
+  if(S.df>0){
+    document.getElementById('draftNote').textContent='В черновике уже '+S.df+' записей — можно собирать.';
+    document.getElementById('botBuild').style.display='block';
+  }
+
+  document.getElementById('memT').textContent=(S.me&&S.me.t)||0;
+  document.getElementById('memF').textContent=(S.me&&S.me.f)||0;
+
+  var kl=document.getElementById('keyList'),ka=document.getElementById('keyAsk');
+  kl.innerHTML='';ka.innerHTML='';
+  (S.K||[]).forEach(function(k){
+    var row=document.createElement('div');row.className='row';
+    row.innerHTML='<div><div class="nm">'+k.n+'</div><div class="nt">'+(k.d||'')+'</div></div>'
+      +'<span class="chip'+(k.s?' on':'')+'"><i class="dot'+(k.s?' y':'')+'"></i>'+(k.s?'есть':'нет')+'</span>';
+    kl.appendChild(row);
+    if(!k.s){
+      var b=document.createElement('button');b.textContent=k.n;
+      b.addEventListener('click',function(){hap();send({do:'howkey',id:k.i});});
+      ka.appendChild(b);
+    }
+  });
+  if(!ka.children.length)ka.innerHTML='<p class="empty">Все ключи на месте.</p>';
+
+  document.querySelectorAll('[data-send]').forEach(function(b){
+    b.addEventListener('click',function(){hap('medium');send(JSON.parse(b.dataset.send));});
+  });
+
+  document.getElementById('digGo').addEventListener('click',function(){
+    var q=document.getElementById('digQ').value.trim();
+    if(q.length<3){alertMe('Напиши, что искать.');return;}
+    hap('medium');send({do:'dig',q:q});
+  });
+  document.getElementById('factGo').addEventListener('click',function(){
+    var t=document.getElementById('factText').value.trim();
+    if(t.length<4){alertMe('Слишком коротко.');return;}
+    hap('medium');send({do:'fact',text:t});
+  });
+  document.getElementById('devGo').addEventListener('click',function(){
+    var t=document.getElementById('devText').value.trim();
+    if(t.length<8){alertMe('Опиши подробнее, что поменять.');return;}
+    hap('medium');send({do:'dev',text:t});
+  });
+
+  if(tg){
+    tg.MainButton.setParams({text:'Сохранить настройки',color:'#FF6B4A',text_color:'#1a0d08'});
+    tg.MainButton.onClick(function(){
+      if(!Object.keys(changes).length){tg.close();return;}
+      send({do:'save',changes:changes});
+    });
+    tg.MainButton.show();
+  }
+}
+function alertMe(t){try{tg.showAlert(t);}catch(e){alert(t);}}
+start();
+})();
+</script>
+</body>
+</html>
