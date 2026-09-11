@@ -136,7 +136,7 @@ code{background:rgba(0,0,0,.4);border:1px solid var(--line);padding:2px 6px;bord
   <button role="tab" data-tab="t-dig" aria-selected="false">Поиск</button>
   <button role="tab" data-tab="t-sites" aria-selected="false">Сайты</button>
   <button role="tab" data-tab="t-bots" aria-selected="false">Боты</button>
-  <button role="tab" data-tab="t-bd" aria-selected="false">Дни рождения</button>
+  <button role="tab" data-tab="t-bd" aria-selected="false">Праздники</button>
   <button role="tab" data-tab="t-mem" aria-selected="false">Память</button>
   <button role="tab" data-tab="t-keys" aria-selected="false">Ключи</button>
   <button role="tab" data-tab="t-dev" aria-selected="false">Доработка</button>
@@ -245,23 +245,31 @@ code{background:rgba(0,0,0,.4);border:1px solid var(--line);padding:2px 6px;bord
 <section id="t-bd">
   <div class="card">
     <div class="row">
-      <div><div class="nm">Поздравления с днём рождения</div><div class="nt" id="bdState">каждый день в 9:00 МСК</div></div>
+      <div><div class="nm">Личные праздники</div><div class="nt" id="bdState">дни рождения, свадьбы, годовщины · каждый день в 9:00 МСК</div></div>
       <button class="sw" id="swBd"></button>
     </div>
+    <div class="row">
+      <div><div class="nm">Общие праздники</div><div class="nt">Новый год, 8 марта, 9 мая и другие даты из календаря — просто напоминание</div></div>
+      <button class="sw" id="swHol"></button>
+    </div>
+    <div class="nt" id="bdStats" style="margin-top:10px"></div>
   </div>
   <div class="card">
     <h2>Как это работает</h2>
-    <p>Утром бот сам смотрит календарь. Если у кого-то день рождения — спросит тебя про человека
-       (текстом или голосом), напишет живое поздравление без ИИ-штампов и пришлёт готовый текст
-       плюс персональную открытку-страницу. Останется скопировать и отправить.</p>
+    <p>Утром бот сам смотрит Apple Календарь этого Мака. Личный праздник (день рождения,
+       свадьба, годовщина) — спросит тебя про человека текстом или голосом, напишет живое
+       поздравление без ИИ-штампов и пришлёт готовый текст плюс персональную открытку-страницу.
+       Общий праздник — просто напомнит одной строкой. Бытовые события (поезда, дела, покупки)
+       бот в праздники не берёт.</p>
     <button class="act" data-send='{"do":"bdnow"}'>🎂 Проверить сегодня</button>
     <button class="act ghost" data-send='{"do":"bdsync"}'>📇 Обновить даты из Apple</button>
   </div>
   <div class="card" id="bdSetup">
-    <h2>Подключить календарь</h2>
-    <p>Опубликуй в Apple Календаре отдельный календарь с днями рождения и пришли ссылку —
-       покажу точную команду.</p>
-    <button class="act ghost" data-send='{"do":"bdnow"}'>📅 Показать, как подключить</button>
+    <h2>Календарь</h2>
+    <p>Бот читает Apple Календарь прямо с этого Мака — ничего публиковать не нужно. Праздники
+       ловятся по названию события. Хочешь добавить дату — просто заведи её в Календаре с
+       понятным названием («День рождения Ани», «Годовщина свадьбы»), бот подхватит сам.</p>
+    <button class="act ghost" data-send='{"do":"bdsync"}'>📇 Обновить даты из Apple</button>
   </div>
 </section>
 
@@ -445,7 +453,14 @@ function render(){
 
   if(S.bd){
     toggler(document.getElementById('swBd'),S.bd.on,function(v){changes.bdOn=v;});
-    document.getElementById('bdState').textContent=S.bd.ready?'календарь подключён · каждый день в 9:00 МСК':'календарь ещё не подключён';
+    toggler(document.getElementById('swHol'),S.bd.hol,function(v){changes.bdHol=v;});
+    document.getElementById('bdState').textContent=S.bd.ready?'дни рождения, свадьбы, годовщины · каждый день в 9:00 МСК':'даты пока не загружены';
+    var stats=[];
+    if(S.bd.cp)stats.push('личных: '+S.bd.cp);
+    if(S.bd.ch)stats.push('праздников: '+S.bd.ch);
+    var line=stats.length?('В базе '+stats.join(', ')):'База пока пуста — нажми «Обновить даты из Apple».';
+    if(S.bd.upd)line+=' · обновлено '+S.bd.upd;
+    document.getElementById('bdStats').textContent=line;
     if(S.bd.ready)document.getElementById('bdSetup').style.display='none';
   }
   document.getElementById('memT').textContent=(S.me&&S.me.t)||0;
